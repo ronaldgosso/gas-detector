@@ -13,7 +13,7 @@
     --border-light: #dee2e6;
     --card-shadow-light: 0 4px 15px rgba(0, 0, 0, 0.08);
     --hover-light: rgba(56, 189, 248, 0.1);
-    
+
     /* Dark Theme (Deep Space) */
     --deep-space: #0F172A;
     --slate-card: #1E293B;
@@ -23,12 +23,12 @@
     --neon-green: #22C55E;
     --amber-alert: #EAB308;
     --crimson-red: #EF4444;
-    
+
     /* Status Colors (Same for both themes) */
     --status-normal: #22C55E;
     --status-warning: #EAB308;
     --status-danger: #EF4444;
-    
+
     /* Default Theme Variables (Light) */
     --bg-primary: var(--bg-primary-light);
     --bg-secondary: var(--bg-secondary-light);
@@ -146,7 +146,8 @@ body {
     margin: 0 0.5rem;
 }
 
-.nav-link:hover, .nav-link.active {
+.nav-link:hover,
+.nav-link.active {
     color: var(--btn-primary-bg) !important;
 }
 
@@ -248,6 +249,11 @@ body {
     box-shadow: 0 0 10px var(--status-normal);
 }
 
+.status-dot.warning {
+    background: var(--status-warning);
+    box-shadow: 0 0 10px var(--status-warning);
+}
+
 .status-text {
     color: var(--text-primary);
     font-size: 0.95rem;
@@ -345,6 +351,7 @@ body {
         opacity: 0;
         transform: translateY(-20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -437,19 +444,19 @@ body {
 }
 
 /* ===== TABLE FOOTER (Records Count & Pagination) ===== */
-.card-body > .d-flex {
+.card-body>.d-flex {
     background: var(--card-body-bg);
     padding-top: 1rem;
     border-top: 1px solid var(--border-color);
     color: var(--text-primary);
 }
 
-.card-body > .d-flex .text-muted {
+.card-body>.d-flex .text-muted {
     color: var(--text-muted) !important;
 }
 
-.card-body > .d-flex span#recordsShown,
-.card-body > .d-flex span#totalRecordsBottom {
+.card-body>.d-flex span#recordsShown,
+.card-body>.d-flex span#totalRecordsBottom {
     color: var(--btn-primary-bg);
     font-weight: 600;
 }
@@ -558,7 +565,7 @@ body {
     -webkit-appearance: none !important;
     -moz-appearance: none !important;
     appearance: none !important;
-    
+
     /* Custom styling */
     background: var(--form-select-bg);
     border: 1px solid var(--form-select-border);
@@ -615,6 +622,30 @@ body {
 .form-label {
     color: var(--text-secondary);
     font-weight: 500;
+}
+
+/* ===== DROPDOWN MENU ===== */
+.dropdown-menu {
+    background: var(--card-body-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: var(--card-shadow);
+}
+
+.dropdown-item {
+    color: var(--text-primary);
+    padding: 0.5rem 1rem;
+    transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+    background: var(--hover-bg);
+    color: var(--btn-primary-bg);
+}
+
+.dropdown-item i {
+    width: 20px;
+    text-align: center;
 }
 
 /* ===== MODAL STYLES ===== */
@@ -719,8 +750,13 @@ canvas {
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 /* ===== SCROLLBAR ===== */
@@ -739,6 +775,13 @@ canvas {
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--btn-primary-hover);
+}
+
+/* ===== SECTION NAVIGATION ===== */
+#logs,
+#analytics,
+#settings {
+    display: none;
 }
 
 /* ===== RESPONSIVE DESIGN ===== */
@@ -769,7 +812,7 @@ canvas {
     .theme-selector {
         flex-direction: column;
     }
-    
+
     .form-select {
         min-width: 120px;
         font-size: 0.8rem;
@@ -795,4 +838,94 @@ canvas {
         padding: 0.4rem 0.8rem;
         font-size: 0.85rem;
     }
+}
+
+/* ===== THEMED TABLE FIXES ===== */
+.themed-table-container {
+    border-radius: 8px;
+    background: var(--card-body-bg);
+    box-shadow: var(--card-shadow);
+    padding: 1px;
+    /* Creates border effect */
+}
+
+.themed-table {
+    color: var(--text-primary);
+    background: transparent !important;
+    margin-bottom: 0;
+}
+
+.themed-table thead {
+    background: var(--table-header-bg) !important;
+    border-bottom: 2px solid var(--btn-primary-bg) !important;
+}
+
+.themed-table thead th {
+    color: var(--table-header-text) !important;
+    font-weight: 600 !important;
+    padding: 0.75rem 1rem !important;
+    border: none !important;
+    background: var(--table-header-bg) !important;
+}
+
+.themed-table tbody {
+    background: transparent !important;
+}
+
+.themed-table tbody tr {
+    border-bottom: 1px solid var(--border-color) !important;
+    background: var(--card-body-bg) !important;
+    transition: background 0.2s ease;
+}
+
+.themed-table tbody tr:hover {
+    background: var(--hover-bg) !important;
+}
+
+.themed-table tbody td {
+    padding: 0.75rem 1rem !important;
+    vertical-align: middle !important;
+    border: none !important;
+    color: var(--text-primary) !important;
+    font-size: 0.9rem;
+}
+
+.themed-table-cell {
+    color: var(--text-muted) !important;
+}
+
+/* Themed badge for contact count */
+.themed-badge {
+    background: var(--btn-primary-bg) !important;
+    color: var(--btn-primary-text) !important;
+    padding: 0.25em 0.6em !important;
+    font-size: 0.85em !important;
+    font-weight: 600 !important;
+    border-radius: 10px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.themed-badge::after {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: currentColor;
+    border-radius: 50%;
+    margin-left: 4px;
+}
+
+/* Action button theming */
+.btn-sm.btn-outline-danger {
+    border-color: var(--status-danger) !important;
+    color: var(--status-danger) !important;
+}
+
+.btn-sm.btn-outline-danger:hover {
+    background: var(--status-danger) !important;
+    color: white !important;
+    transform: scale(1.05);
+    transition: all 0.2s ease;
 }
