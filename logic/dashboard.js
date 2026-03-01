@@ -7,7 +7,7 @@
 const API_BASE_URL = 'https://gas-detector-api.vercel.app'; // ✅ Production URL
 let currentPage = 1;
 let itemsPerPage = 10;
-let autoRefreshInterval = 2000; // 2 seconds
+let autoRefreshInterval = 5000; // 5 seconds
 let autoRefreshEnabled = true;
 let notificationSoundEnabled = true;
 let currentTheme = 'light';
@@ -55,7 +55,7 @@ function initializeNotiflix() {
             opacity: 1,
             borderRadius: '8px',
             rtl: false,
-            timeout: 4000, // ✅ AUTO-DISMISS AFTER 4 SECONDS
+            timeout: 3000, // ✅ AUTO-DISMISS AFTER 3 SECONDS
             messageMaxLength: 110,
             backOverlay: false,
             backOverlayColor: 'rgba(0,0,0,0.5)',
@@ -130,7 +130,7 @@ function initializeNotiflix() {
             // ✅ Report dialogs still require manual dismissal (safety critical)
         });
 
-        console.log('✅ Notiflix initialized with 4-second auto-dismiss');
+        console.log('✅ Notiflix initialized with 3-second auto-dismiss');
     } else {
         console.error('❌ Notiflix not loaded - check script tag in HTML');
     }
