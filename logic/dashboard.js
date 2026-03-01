@@ -1202,7 +1202,7 @@ function playAlertSound() {
 function saveSettings() {
     const threshold = document.getElementById('thresholdInput').value;
     const interval = document.getElementById('refreshInterval').value;
-    const port = document.getElementById('bluetoothPort').value;
+    // const port = document.getElementById('bluetoothPort').value;
     const endpoint = document.getElementById('apiEndpoint').value;
     const theme = document.getElementById('themeSelect').value;
     autoRefreshEnabled = document.getElementById('autoRefreshToggle').checked;
@@ -1211,7 +1211,7 @@ function saveSettings() {
     // Save to localStorage
     localStorage.setItem('gasThreshold', threshold);
     localStorage.setItem('refreshInterval', interval);
-    localStorage.setItem('bluetoothPort', port);
+    // localStorage.setItem('bluetoothPort', port);
     localStorage.setItem('apiEndpoint', endpoint);
     localStorage.setItem('gasMonitorTheme', theme);
     localStorage.setItem('autoRefreshEnabled', autoRefreshEnabled);
@@ -1229,7 +1229,7 @@ function saveSettings() {
 function loadSettings() {
     const threshold = localStorage.getItem('gasThreshold') || '400';
     const interval = localStorage.getItem('refreshInterval') || '2';
-    const port = localStorage.getItem('bluetoothPort') || 'COM5';
+    // const port = localStorage.getItem('bluetoothPort') || 'COM5';
     const endpoint = localStorage.getItem('apiEndpoint') || 'https://gas-detector-api.onrender.com';
     const theme = localStorage.getItem('gasMonitorTheme') || 'light';
     const autoRefresh = localStorage.getItem('autoRefreshEnabled') !== 'false';
@@ -1238,7 +1238,7 @@ function loadSettings() {
     if (document.getElementById('thresholdInput')) {
         document.getElementById('thresholdInput').value = threshold;
         document.getElementById('refreshInterval').value = interval;
-        document.getElementById('bluetoothPort').value = port;
+        // document.getElementById('bluetoothPort').value = port;
         document.getElementById('apiEndpoint').value = endpoint;
         document.getElementById('themeSelect').value = theme;
         document.getElementById('autoRefreshToggle').checked = autoRefresh;
@@ -1257,7 +1257,7 @@ function saveModalSettings() {
     if (document.getElementById('modalThresholdInput')) {
         document.getElementById('thresholdInput').value = document.getElementById('modalThresholdInput').value;
         document.getElementById('refreshInterval').value = document.getElementById('modalRefreshInterval').value;
-        document.getElementById('bluetoothPort').value = document.getElementById('modalBluetoothPort').value;
+        // document.getElementById('bluetoothPort').value = document.getElementById('modalBluetoothPort').value;
         document.getElementById('apiEndpoint').value = document.getElementById('modalApiEndpoint').value;
     }
 
