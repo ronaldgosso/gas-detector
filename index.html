@@ -1,24 +1,21 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gas Guard Monitor</title>
+    <title>Gas Leak Monitor | Real-time Dashboard</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notiflix@3.2.7/dist/notiflix-3.2.7.min.css" />
     <link rel="stylesheet" href="./style/styles.css">
 </head>
-
 <body>
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-themed">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">
                 <i class="fas fa-fire-alt me-2"></i>
-                Gas Guard Monitor
+                GasGuard Monitor
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -26,7 +23,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="#dashboard"><i class="fas fa-home me-1"></i> Dashboard</a>
+                        <a class="nav-link active" href="#dashboard"><i class="fas fa-home me-1"></i> Dashboard</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#logs"><i class="fas fa-history me-1"></i> Logs</a>
@@ -59,19 +56,19 @@
                         <hr class="divider">
                         <div class="status-indicator">
                             <span class="status-dot" id="connectionStatus"></span>
-                            <span class="status-text">Connection: <span id="connectionText">Disconnected</span></span>
+                            <span class="status-text">Server: <span id="connectionText">Disconnected</span></span>
                         </div>
                         <div class="status-indicator mt-2">
                             <span class="status-dot" id="sensorStatus"></span>
                             <span class="status-text">Sensor: <span id="sensorText">Offline</span></span>
                         </div>
                         <div class="status-indicator mt-2">
-                            <span class="status-dot" id="arduinoStatus"></span>
-                            <span class="status-text">Arduino: <span id="arduinoText">Not Connected</span></span>
+                            <i class="fas fa-mobile-alt me-2" style="color: var(--text-secondary);"></i>
+                            <span class="status-text">Mobile: <span id="mobileStatus">Awaiting Data</span></span>
                         </div>
                         <div class="status-indicator mt-2">
-                            <i class="fas fa-signal me-2" style="color: var(--text-secondary);"></i>
-                            <span class="status-text">Signal: <span id="signalStrength">0%</span></span>
+                            <i class="fas fa-cloud me-2" style="color: var(--text-secondary);"></i>
+                            <span class="status-text">Database: <span id="dbStatus">Synced</span></span>
                         </div>
                     </div>
                 </div>
@@ -93,8 +90,7 @@
                         <h5 class="card-title"><i class="fas fa-chart-pie me-2"></i>Statistics</h5>
                         <hr class="divider">
                         <div class="stat-item">
-                            <span class="stat-label"><i class="fas fa-exclamation-triangle text-danger me-2"></i>Alerts
-                                Today</span>
+                            <span class="stat-label"><i class="fas fa-exclamation-triangle text-danger me-2"></i>Alerts Today</span>
                             <span class="stat-value" id="alertsToday">0</span>
                         </div>
                         <div class="stat-item">
@@ -122,10 +118,9 @@
                         <button class="btn btn-outline-warning w-100 mb-2" id="clearLogsBtn" onclick="clearLogs()">
                             <i class="fas fa-trash me-2"></i>Clear Logs
                         </button>
-                        <!-- <button class="btn btn-outline-info w-100" data-bs-toggle="modal"
-                            data-bs-target="#settingsModal">
+                        <button class="btn btn-outline-info w-100" data-bs-toggle="modal" data-bs-target="#settingsModal">
                             <i class="fas fa-cog me-2"></i>Settings
-                        </button> -->
+                        </button>
                     </div>
                 </div>
 
@@ -158,8 +153,7 @@
                         <i class="fas fa-exclamation-triangle fa-2x"></i>
                         <div class="alert-text">
                             <h4 id="alertTitle">Gas Leak Detected!</h4>
-                            <p id="alertMessage">Gas level at <span id="alertLevel">0</span> PPM - Immediate action
-                                required!</p>
+                            <p id="alertMessage">Gas level at <span id="alertLevel">0</span> PPM - Immediate action required!</p>
                         </div>
                         <button class="btn-close" onclick="closeAlert()"></button>
                     </div>
@@ -176,34 +170,27 @@
                             <canvas id="gasChart" height="200"></canvas>
                         </div>
                     </div>
-                </div>
 
-                <!-- Logs Section -->
-                <div id="logs" style="display: none;">
-                    <div class="card main-card">
+                    <!-- Recent Incidents Table -->
+                    <div class="card main-card" id="logs">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Incidents</h5>
                             <div class="d-flex gap-2">
                                 <div class="form-select-container">
-                                    <select class="form-select form-select-sm" id="filterStatus"
-                                        onchange="filterTable()">
+                                    <select class="form-select form-select-sm" id="filterStatus" onchange="filterTable()">
                                         <option value="all">All Status</option>
                                         <option value="ALERT">Alerts Only</option>
                                         <option value="NORMAL">Normal Only</option>
                                     </select>
                                 </div>
                                 <div class="dropdown">
-                                    <button class="btn btn-sm btn-primary dropdown-toggle" type="button"
-                                        id="exportDropdown" data-bs-toggle="dropdown">
+                                    <button class="btn btn-sm btn-primary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown">
                                         <i class="fas fa-download me-1"></i>Export
                                     </button>
                                     <ul class="dropdown-menu" aria-labelledby="exportDropdown">
-                                        <li><a class="dropdown-item" href="#" onclick="exportData('json')"><i
-                                                    class="fas fa-file-code me-2"></i>JSON</a></li>
-                                        <li><a class="dropdown-item" href="#" onclick="exportData('pdf')"><i
-                                                    class="fas fa-file-pdf me-2"></i>PDF</a></li>
-                                        <li><a class="dropdown-item" href="#" onclick="exportData('csv')"><i
-                                                    class="fas fa-file-csv me-2"></i>CSV</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="exportData('json')"><i class="fas fa-file-code me-2"></i>JSON</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="exportData('pdf')"><i class="fas fa-file-pdf me-2"></i>PDF</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="exportData('csv')"><i class="fas fa-file-csv me-2"></i>CSV</a></li>
                                     </ul>
                                 </div>
                             </div>
@@ -217,6 +204,7 @@
                                             <th>Timestamp</th>
                                             <th>Gas Level (PPM)</th>
                                             <th>Status</th>
+                                            <th>Source</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -227,8 +215,7 @@
                             </div>
                             <div class="d-flex justify-content-between align-items-center mt-3">
                                 <div>
-                                    <span class="text-muted">Showing <span id="recordsShown">0</span> of <span
-                                            id="totalRecordsBottom">0</span> records</span>
+                                    <span class="text-muted">Showing <span id="recordsShown">0</span> of <span id="totalRecordsBottom">0</span> records</span>
                                 </div>
                                 <nav>
                                     <ul class="pagination mb-0" id="pagination">
@@ -272,35 +259,23 @@
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Gas Threshold (PPM)</label>
-                                        <input type="number" class="form-control" id="thresholdInput" value="400"
-                                            min="0" max="1023">
-                                        <small class="text-muted">Alert triggers when gas level exceeds this
-                                            value</small>
+                                        <input type="number" class="form-control" id="thresholdInput" value="400" min="0" max="1023">
+                                        <small class="text-muted">Alert triggers when gas level exceeds this value</small>
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Refresh Interval (seconds)</label>
-                                        <input type="number" class="form-control" id="refreshInterval" value="2" min="1"
-                                            max="60">
+                                        <input type="number" class="form-control" id="refreshInterval" value="2" min="1" max="60">
                                     </div>
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label">Bluetooth Port</label>
-                                    <input type="text" class="form-control" id="bluetoothPort"
-                                        placeholder="COM5 or /dev/rfcomm0" value="COM5">
-                                </div>
-                                <div class="mb-3">
                                     <label class="form-label">API Endpoint</label>
-                                    <input type="text" class="form-control" id="apiEndpoint"
-                                        value="http://localhost:3000">
+                                    <input type="text" class="form-control" id="apiEndpoint" value="https://gas-detector-api.onrender.com">
                                 </div>
-
-
+                                
                                 <!-- EMERGENCY CONTACTS MANAGEMENT - MAIN SETTINGS -->
                                 <div class="mb-4">
-                                    <h6 class="fw-bold mb-3"><i
-                                            class="fas fa-user-friends me-2 text-primary"></i>Emergency Contacts for SMS
-                                        Alerts</h6>
-
+                                    <h6 class="fw-bold mb-3"><i class="fas fa-user-friends me-2 text-primary"></i>Emergency Contacts for SMS Alerts</h6>
+                                    
                                     <!-- SMS Contact Selection -->
                                     <div class="mb-3">
                                         <label class="form-label fw-semibold">
@@ -312,11 +287,9 @@
                                         </select>
                                         <small class="text-muted mt-1 d-block">
                                             <i class="fas fa-info-circle me-1"></i>
-                                            Choose specific contact or send to all active contacts for critical alerts
-                                            (>800 PPM)
+                                            Choose specific contact or send to all active contacts for critical alerts (>800 PPM)
                                         </small>
-                                        <button type="button" class="btn btn-sm btn-primary mt-2" id="saveSmsContactBtn"
-                                            onclick="saveSelectedContact()">
+                                        <button type="button" class="btn btn-sm btn-primary mt-2" id="saveSmsContactBtn" onclick="saveSelectedContact()">
                                             <i class="fas fa-save me-1"></i>Save Selection
                                         </button>
                                         <span id="smsContactStatus" class="ms-2"></span>
@@ -330,27 +303,23 @@
                                             </h6>
                                             <div class="row g-3">
                                                 <div class="col-md-5">
-                                                    <label class="form-label">Phone Number <span
-                                                            class="text-danger">*</span></label>
+                                                    <label class="form-label">Phone Number <span class="text-danger">*</span></label>
                                                     <div class="input-group">
                                                         <span class="input-group-text">+255</span>
-                                                        <input type="tel" class="form-control" id="newContactPhone"
-                                                            placeholder="712 345 678"
-                                                            pattern="[0-9]{3}[ ]?[0-9]{3}[ ]?[0-9]{3}"
-                                                            title="Enter 9 digits (e.g., 712 345 678)">
+                                                        <input type="tel" class="form-control" id="newContactPhone" 
+                                                               placeholder="712 345 678" 
+                                                               pattern="[0-9]{3}[ ]?[0-9]{3}[ ]?[0-9]{3}"
+                                                               title="Enter 9 digits (e.g., 712 345 678)">
                                                     </div>
-                                                    <small class="text-muted">Tanzania format without country
-                                                        code</small>
+                                                    <small class="text-muted">Tanzania format without country code</small>
                                                 </div>
                                                 <div class="col-md-5">
-                                                    <label class="form-label">Contact Name <span
-                                                            class="text-danger">*</span></label>
-                                                    <input type="text" class="form-control" id="newContactName"
-                                                        placeholder="e.g., Fire Department, John Doe">
+                                                    <label class="form-label">Contact Name <span class="text-danger">*</span></label>
+                                                    <input type="text" class="form-control" id="newContactName" 
+                                                           placeholder="e.g., Fire Department, John Doe">
                                                 </div>
                                                 <div class="col-md-2 d-flex align-items-end">
-                                                    <button type="button" class="btn btn-success w-100"
-                                                        id="addContactBtn" onclick="addEmergencyContact()">
+                                                    <button type="button" class="btn btn-success w-100" id="addContactBtn" onclick="addEmergencyContact()">
                                                         <i class="fas fa-plus me-1"></i>Add
                                                     </button>
                                                 </div>
@@ -360,14 +329,11 @@
                                     </div>
 
                                     <!-- Active Contacts List -->
-                                    <!-- Active Contacts List -->
                                     <div class="mt-3">
-                                        <h6 class="fw-bold mb-2">Active Contacts <span id="activeContactsCount"
-                                                class="badge themed-badge ms-2">0</span></h6>
-                                        <div class="table-responsive themed-table-container"
-                                            style="max-height: 200px; overflow-y: auto;">
+                                        <h6 class="fw-bold mb-2">Active Contacts <span id="activeContactsCount" class="badge bg-primary ms-2">0</span></h6>
+                                        <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
                                             <table class="table table-sm table-hover mb-0 themed-table">
-                                                <thead> <!-- ✅ REMOVED table-light CLASS -->
+                                                <thead>
                                                     <tr>
                                                         <th>Name</th>
                                                         <th>Phone</th>
@@ -377,8 +343,7 @@
                                                 <tbody id="activeContactsTable">
                                                     <tr>
                                                         <td colspan="3" class="text-center py-3 themed-table-cell">
-                                                            <i class="fas fa-spinner fa-spin me-2"></i>Loading
-                                                            contacts...
+                                                            <i class="fas fa-spinner fa-spin me-2"></i>Loading contacts...
                                                         </td>
                                                     </tr>
                                                 </tbody>
@@ -387,8 +352,7 @@
                                     </div>
                                 </div>
                                 <!-- END EMERGENCY CONTACTS MANAGEMENT -->
-
-
+                                
                                 <div class="mb-3">
                                     <label class="form-label">Theme Preference</label>
                                     <select class="form-select" id="themeSelect">
@@ -400,23 +364,18 @@
                                     <label class="form-label">Auto Refresh</label>
                                     <div class="form-check form-switch">
                                         <input class="form-check-input" type="checkbox" id="autoRefreshToggle" checked>
-                                        <label class="form-check-label" for="autoRefreshToggle">Enable
-                                            auto-refresh</label>
+                                        <label class="form-check-label" for="autoRefreshToggle">Enable auto-refresh</label>
                                     </div>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Notification Sound</label>
                                     <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="notificationSoundToggle"
-                                            checked>
-                                        <label class="form-check-label" for="notificationSoundToggle">Play sound on
-                                            alerts</label>
+                                        <input class="form-check-input" type="checkbox" id="notificationSoundToggle" checked>
+                                        <label class="form-check-label" for="notificationSoundToggle">Play sound on alerts</label>
                                     </div>
                                 </div>
-                                <button type="button" class="btn btn-primary" onclick="saveSettings()">Save
-                                    Settings</button>
-                                <button type="button" class="btn btn-secondary ms-2" onclick="loadSettings()">Load
-                                    Settings</button>
+                                <button type="button" class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+                                <button type="button" class="btn btn-secondary ms-2" onclick="loadSettings()">Load Settings</button>
                             </form>
                         </div>
                     </div>
@@ -438,50 +397,37 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label">Gas Threshold (PPM)</label>
-                                <input type="number" class="form-control" id="modalThresholdInput" value="400" min="0"
-                                    max="1023">
+                                <input type="number" class="form-control" id="modalThresholdInput" value="400" min="0" max="1023">
                                 <small class="text-muted">Alert triggers when gas level exceeds this value</small>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label">Refresh Interval (seconds)</label>
-                                <input type="number" class="form-control" id="modalRefreshInterval" value="2" min="1"
-                                    max="60">
+                                <input type="number" class="form-control" id="modalRefreshInterval" value="2" min="1" max="60">
                             </div>
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Bluetooth Port</label>
-                        <input type="text" class="form-control" id="modalBluetoothPort"
-                            placeholder="COM5 or /dev/rfcomm0" value="COM5">
-                    </div>
-                    <div class="mb-3">
                         <label class="form-label">API Endpoint</label>
-                        <input type="text" class="form-control" id="modalApiEndpoint" value="http://localhost:3000">
+                        <input type="text" class="form-control" id="modalApiEndpoint" value="https://gas-detector-api.onrender.com">
                     </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">
-                            <i class="fas fa-phone-alt me-2"></i>Emergency Phone Number
-                        </label>
-                        <input type="tel" class="form-control" id="modalEmergencyPhone" placeholder="e.g., 712 345 678">
-                        <small class="text-muted">
-                            <i class="fas fa-shield-alt me-1"></i>
-                            Critical alerts sent via SMS when gas > 800 PPM
-                        </small>
-                    </div>
+                    
+                    <!-- EMERGENCY CONTACTS IN MODAL -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold">
                             <i class="fas fa-bell me-1 text-warning"></i>SMS Alert Contact
                         </label>
                         <select class="form-select form-select-sm" id="modalSmsContactSelect">
                             <option value="0">📱 Send to ALL Active Contacts</option>
+                            <!-- Options populated by JavaScript -->
                         </select>
                         <small class="text-muted mt-1 d-block">
                             Critical alerts (>800 PPM) will be sent via SMS
                         </small>
                     </div>
+                    <!-- END MODAL CONTACTS -->
+                    
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -512,12 +458,12 @@
                 <i class="fas fa-fire-alt"></i>
             </div>
             <h2>Loading Gas Monitor Dashboard</h2>
-            <p>Fetching historical data...</p>
+            <p>Connecting to cloud server...</p>
             <div class="loading-bar">
                 <div id="loadingProgress"></div>
             </div>
             <div class="loading-stats">
-                <span id="loadingStatus">Initializing...</span>
+                <span id="loadingStatus">Initializing secure connection...</span>
             </div>
         </div>
     </div>
@@ -525,9 +471,8 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/notiflix@3.2.7/dist/notiflix-3.2.7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/notiflix/3.2.6/notiflix-aio-3.2.6.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="./logic/dashboard.js"></script>
 </body>
-
 </html>

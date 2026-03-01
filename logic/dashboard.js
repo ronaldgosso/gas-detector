@@ -1,31 +1,38 @@
 // ==========================================
 // GAS LEAK DETECTION DASHBOARD - JAVASCRIPT
-// Fixed: Notiflix auto-dismiss after 4 seconds + Tanzania network resilience
+// Mobile-First Architecture: Arduino logic removed
+// Demo data shows ONLY on first visit (localStorage tracked)
 // ==========================================
 
 // Configuration
-const API_BASE_URL = 'https://gas-detector-api.vercel.app'; // ✅ Production URL
+const API_BASE_URL = 'https://gas-detector-api.vercel.app'; // Production URL
 let currentPage = 1;
 let itemsPerPage = 10;
 let autoRefreshInterval = 5000; // 5 seconds
 let autoRefreshEnabled = true;
 let notificationSoundEnabled = true;
 let currentTheme = 'light';
-let arduinoConnected = false;
-let signalStrength = 0;
 let chart = null;
 let dailyChart = null;
 let distributionChart = null;
 let lastGasLevel = 0;
 let lastStatus = 'NORMAL';
+let hasMobileData = false; // Track if mobile data exists
 
 // Loading screen progress tracking
 let loadingProgress = 0;
 let loadingInterval;
 
+// First visit tracking (demo data only on first load)
+const isFirstVisit = localStorage.getItem('dashboardFirstVisit') === null;
+if (isFirstVisit) {
+    localStorage.setItem('dashboardFirstVisit', 'completed');
+    console.log('✅ First visit detected - demo data will be shown if DB is empty');
+}
+
 // Initialize dashboard on page load
 document.addEventListener('DOMContentLoaded', function () {
-    // Initialize Notiflix immediately after DOM loads (with 4s timeout)
+    // Initialize Notiflix (3-second auto-dismiss)
     initializeNotiflix();
 
     // Start animated loading screen
@@ -40,13 +47,12 @@ document.addEventListener('DOMContentLoaded', function () {
     // Setup event listeners
     setupEventListeners();
 
-    // Load all data immediately (don't wait for Arduino)
+    // Load all data immediately
     loadDataAndInitialize();
 });
 
-// ===== NOTIFLIX INITIALIZATION (4-second auto-dismiss) =====
+// ===== NOTIFLIX INITIALIZATION (3-second auto-dismiss) =====
 function initializeNotiflix() {
-    // Check if Notiflix is loaded
     if (typeof Notiflix !== 'undefined') {
         Notiflix.Notify.init({
             width: '320px',
@@ -127,7 +133,6 @@ function initializeNotiflix() {
             buttonFocusBackground: 'rgba(56,189,248,0.1)',
             svgSize: '110px',
             fontFamily: 'inherit',
-            // ✅ Report dialogs still require manual dismissal (safety critical)
         });
 
         console.log('✅ Notiflix initialized with 3-second auto-dismiss');
@@ -138,20 +143,16 @@ function initializeNotiflix() {
 
 // ===== LOADING SCREEN ANIMATION =====
 function startLoadingAnimation() {
-    // Update loading status
     updateLoadingStatus('Initializing dashboard...');
 
-    // Simulate progress with random intervals for more natural feel
     loadingProgress = 0;
     const progressElement = document.getElementById('loadingProgress');
     const statusElement = document.getElementById('loadingStatus');
 
     if (!progressElement || !statusElement) return;
 
-    // Clear any existing interval
     if (loadingInterval) clearInterval(loadingInterval);
 
-    // Random progress increments for natural feel
     const increments = [5, 8, 12, 7, 10, 15, 8, 12, 18, 10, 15, 20, 12, 18, 25];
     let currentIndex = 0;
 
@@ -160,8 +161,7 @@ function startLoadingAnimation() {
             loadingProgress += increments[currentIndex];
             currentIndex++;
 
-            if (loadingProgress > 95) loadingProgress = 95; // Leave room for final completion
-
+            if (loadingProgress > 95) loadingProgress = 95;
             progressElement.style.width = loadingProgress + '%';
         }
     }, 300);
@@ -169,40 +169,28 @@ function startLoadingAnimation() {
 
 function updateLoadingStatus(message) {
     const statusElement = document.getElementById('loadingStatus');
-    if (statusElement) {
-        statusElement.textContent = message;
-    }
+    if (statusElement) statusElement.textContent = message;
 }
 
 function completeLoading() {
     const progressElement = document.getElementById('loadingProgress');
-    if (progressElement) {
-        progressElement.style.width = '100%';
-    }
+    if (progressElement) progressElement.style.width = '100%';
 
-    // Wait a moment for the progress bar to reach 100%
-    setTimeout(() => {
-        hideLoadingScreen();
-    }, 300);
+    setTimeout(() => hideLoadingScreen(), 300);
 }
 
 function hideLoadingScreen() {
     const loadingScreen = document.getElementById('loadingScreen');
     if (loadingScreen) {
-        // Add fade-out class for smooth transition
         loadingScreen.classList.add('fade-out');
-
-        // Remove after animation completes
-        setTimeout(() => {
-            loadingScreen.remove();
-        }, 500);
+        setTimeout(() => loadingScreen.remove(), 500);
     }
 }
 
 // ===== DATA LOADING AND INITIALIZATION =====
 async function loadDataAndInitialize() {
     try {
-        updateLoadingStatus('Loading historical data...');
+        updateLoadingStatus('Connecting to cloud server...');
 
         // Load chart data
         await loadHistoricalChartData();
@@ -230,18 +218,16 @@ async function loadDataAndInitialize() {
         // Complete loading
         completeLoading();
 
-        // ✅ Show success notification with 4s auto-dismiss (configured globally)
+        // Show success notification
         if (typeof Notiflix !== 'undefined') {
-            Notiflix.Notify.success('Dashboard loaded with historical data!');
-        } else {
-            console.log('✅ Dashboard loaded with historical data!');
+            Notiflix.Notify.success('Dashboard loaded successfully!');
         }
 
         // Start real-time updates
         startAutoRefresh();
 
-        // Check Bluetooth connection
-        // checkBluetoothStatus();
+        // Update system status indicators
+        updateSystemStatus(true, true, hasMobileData);
 
     } catch (error) {
         console.error('Error loading initial data:', error);
@@ -250,6 +236,9 @@ async function loadDataAndInitialize() {
         if (typeof Notiflix !== 'undefined') {
             Notiflix.Notify.info('Dashboard loaded (some data may be missing)');
         }
+
+        // Update status indicators on error
+        updateSystemStatus(false, false, false);
     }
 }
 
@@ -275,13 +264,8 @@ function setTheme(theme, showToast = true) {
     const themeIcon = document.getElementById('themeIcon');
     const themeText = document.getElementById('themeText');
     if (themeIcon && themeText) {
-        if (theme === 'dark') {
-            themeIcon.className = 'fas fa-sun';
-            themeText.textContent = 'Light Mode';
-        } else {
-            themeIcon.className = 'fas fa-moon';
-            themeText.textContent = 'Dark Mode';
-        }
+        themeIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        themeText.textContent = theme === 'dark' ? 'Light Mode' : 'Dark Mode';
     }
 
     // Update select dropdown
@@ -290,14 +274,10 @@ function setTheme(theme, showToast = true) {
 
     // Save to localStorage
     localStorage.setItem('gasMonitorTheme', theme);
-
-    // Update theme display
     updateThemeDisplay(theme);
 
-    // Show toast notification (4s auto-dismiss)
-    if (showToast) {
-        showToastMessage(`Switched to ${theme === 'dark' ? 'Dark' : 'Light'} Mode`);
-    }
+    // Show toast notification
+    if (showToast) showToastMessage(`Switched to ${theme === 'dark' ? 'Dark' : 'Light'} Mode`);
 
     // Update chart colors
     updateChartTheme();
@@ -310,9 +290,7 @@ function toggleTheme() {
 
 function updateThemeDisplay(theme) {
     const display = document.getElementById('currentThemeDisplay');
-    if (display) {
-        display.textContent = theme === 'dark' ? 'Dark Mode' : 'Light Mode';
-    }
+    if (display) display.textContent = theme === 'dark' ? 'Dark Mode' : 'Light Mode';
 }
 
 // ===== CHART INITIALIZATION =====
@@ -478,7 +456,7 @@ function updateChartTheme() {
     distributionChart.update();
 }
 
-// ===== LOAD HISTORICAL CHART DATA =====
+// ===== LOAD HISTORICAL CHART DATA (First-Visit Logic) =====
 async function loadHistoricalChartData() {
     try {
         const response = await fetch(`${API_BASE_URL}/api/chart/data?limit=50`);
@@ -499,7 +477,7 @@ async function loadHistoricalChartData() {
                 gasData.labels.push(timestamp);
                 gasData.datasets[0].data.push(item.gas_level);
 
-                // Set chart color based on the latest data point
+                // Set chart color based on latest data point
                 if (item.gas_level > 800) {
                     gasData.datasets[0].borderColor = '#EF4444';
                     gasData.datasets[0].backgroundColor = 'rgba(239, 68, 68, 0.1)';
@@ -510,6 +488,9 @@ async function loadHistoricalChartData() {
                     gasData.datasets[0].borderColor = '#38BDF8';
                     gasData.datasets[0].backgroundColor = 'rgba(56, 189, 248, 0.1)';
                 }
+
+                // Check for mobile data source
+                if (item.sensor_id?.startsWith('MOBILE_')) hasMobileData = true;
             });
 
             // Update chart
@@ -522,40 +503,54 @@ async function loadHistoricalChartData() {
 
             console.log(`✅ Loaded ${data.data.length} historical data points`);
         } else {
-            console.log('ℹ️ No historical data found in database');
-            // Initialize with demo data if database is empty
-            initializeDemoData();
+            // ONLY show demo data on FIRST VISIT
+            if (isFirstVisit) {
+                console.log('ℹ️ First visit with empty database - showing demo data');
+                initializeDemoData();
+            } else {
+                console.log('ℹ️ Database empty (not first visit) - showing empty chart');
+                // Clear chart but don't show demo data
+                gasData.labels = [];
+                gasData.datasets[0].data = [];
+                if (chart) chart.update();
+            }
         }
     } catch (error) {
         console.error('❌ Error loading historical chart data:', error);
-        // Initialize with demo data on error
-        initializeDemoData();
+
+        // ONLY show demo data on FIRST VISIT when error occurs
+        if (isFirstVisit) {
+            console.log('⚠️ Error loading data on first visit - showing demo data');
+            initializeDemoData();
+        } else {
+            console.log('⚠️ Error loading data (not first visit) - showing empty chart');
+            gasData.labels = [];
+            gasData.datasets[0].data = [];
+            if (chart) chart.update();
+        }
     }
 }
 
-// ===== INITIALIZE DEMO DATA (if database is empty) =====
+// ===== INITIALIZE DEMO DATA (First Visit Only) =====
 function initializeDemoData() {
-    // Generate demo data for the last 2 hours
     const now = new Date();
     gasData.labels = [];
     gasData.datasets[0].data = [];
 
     for (let i = 0; i < 20; i++) {
-        const time = new Date(now - (20 - i) * 6 * 60000); // 6 minutes apart
+        const time = new Date(now - (20 - i) * 6 * 60000);
         const timestamp = time.toLocaleTimeString('en-US', {
             hour: '2-digit',
             minute: '2-digit',
             hour12: false
         });
 
-        // Generate realistic gas readings (mostly normal, occasional spikes)
+        // Generate realistic gas readings
         let gasLevel;
         if (i % 5 === 0 && i > 0) {
-            // Every 5th reading is an alert
-            gasLevel = 450 + Math.floor(Math.random() * 200);
+            gasLevel = 450 + Math.floor(Math.random() * 200); // Alerts
         } else {
-            // Normal readings
-            gasLevel = 150 + Math.floor(Math.random() * 100);
+            gasLevel = 150 + Math.floor(Math.random() * 100); // Normal
         }
 
         gasData.labels.push(timestamp);
@@ -579,7 +574,7 @@ function initializeDemoData() {
     lastGasLevel = latestLevel;
     lastStatus = latestLevel > 400 ? 'ALERT' : 'NORMAL';
 
-    console.log('✅ Initialized with demo data');
+    console.log('✅ Initialized with demo data (first visit)');
 }
 
 // ===== LOAD LATEST READING =====
@@ -592,24 +587,19 @@ async function loadLatestReading() {
             updateCurrentReading(data.data);
             lastGasLevel = data.data.gas_level;
             lastStatus = data.data.status;
-            updateConnectionStatus(true);
             console.log('✅ Loaded latest reading from database');
-        } else {
-            // Use last known value from chart data
-            if (lastGasLevel > 0) {
-                const fakeData = {
-                    gas_level: lastGasLevel,
-                    status: lastStatus,
-                    timestamp: new Date().toISOString(),
-                    location: 'Main Sensor'
-                };
-                updateCurrentReading(fakeData);
-                updateConnectionStatus(false);
-            }
+        } else if (lastGasLevel > 0) {
+            // Use last known value if no data
+            const fakeData = {
+                gas_level: lastGasLevel,
+                status: lastStatus,
+                timestamp: new Date().toISOString(),
+                location: 'Main Sensor'
+            };
+            updateCurrentReading(fakeData);
         }
     } catch (error) {
         console.error('❌ Error loading latest reading:', error);
-        updateConnectionStatus(false);
     }
 }
 
@@ -621,6 +611,11 @@ async function loadIncidents() {
         const data = await response.json();
 
         if (data.success) {
+            // Check for mobile data source in incidents
+            hasMobileData = data.data.incidents.some(incident =>
+                incident.sensor_id?.startsWith('MOBILE_')
+            );
+
             populateTable(data.data.incidents);
             setupPagination(data.data.total, data.data.page, data.data.limit);
             console.log(`✅ Loaded ${data.data.incidents.length} incidents`);
@@ -672,8 +667,7 @@ function setupEventListeners() {
         });
     });
 
-    // Arduino connection simulation (for demo only - remove in production)
-    simulateArduinoConnection();
+    // NO ARDUINO SIMULATION - Mobile handles Bluetooth
 }
 
 function showSection(section) {
@@ -717,92 +711,8 @@ function startAutoRefresh() {
                 fetchRealTimeData();
                 loadIncidents();
                 loadStatistics();
-                // checkBluetoothStatus();
             }
         }, autoRefreshInterval);
-    }
-}
-
-// ===== ARDUINO CONNECTION SIMULATION (Demo Only) =====
-function simulateArduinoConnection() {
-    // Simulate Arduino connection after 3 seconds (for demo purposes)
-    setTimeout(() => {
-        arduinoConnected = true;
-        signalStrength = 85 + Math.floor(Math.random() * 15);
-        updateArduinoStatus(true);
-
-        // Start sending simulated real-time data
-        setInterval(sendSimulatedData, 1000);
-    }, 3000);
-}
-
-function updateArduinoStatus(connected, deviceName = '') {
-    const statusDot = document.getElementById('arduinoStatus');
-    const statusText = document.getElementById('arduinoText');
-    const signalStrengthEl = document.getElementById('signalStrength');
-
-    if (statusDot && statusText && signalStrengthEl) {
-        if (connected) {
-            statusDot.className = 'status-dot online';
-            statusText.textContent = `Connected (${deviceName || 'HC-05'})`;
-            statusText.style.color = '#22C55E';
-            if (signalStrengthEl.textContent === '0%') {
-                signalStrengthEl.textContent = `${85 + Math.floor(Math.random() * 15)}%`;
-            }
-        } else {
-            statusDot.className = 'status-dot';
-            statusText.textContent = 'Not Connected';
-            statusText.style.color = '#EF4444';
-            signalStrengthEl.textContent = '0%';
-        }
-    }
-}
-
-function sendSimulatedData() {
-    if (!arduinoConnected) return;
-
-    // Simulate gas sensor readings based on last known value
-    let gasLevel;
-
-    // 80% chance to stay near last value, 20% chance for variation
-    if (Math.random() < 0.8) {
-        // Small variation around last value
-        const variation = Math.floor((Math.random() - 0.5) * 50);
-        gasLevel = Math.max(0, Math.min(1023, lastGasLevel + variation));
-    } else {
-        // Larger random variation
-        if (Math.random() < 0.3) {
-            // Alert scenario
-            gasLevel = 450 + Math.floor(Math.random() * 300);
-        } else {
-            // Normal scenario
-            gasLevel = 150 + Math.floor(Math.random() * 150);
-        }
-    }
-
-    const status = gasLevel > 400 ? 'ALERT' : 'NORMAL';
-
-    // Create fake incident data
-    const fakeIncident = {
-        gas_level: gasLevel,
-        status: status,
-        timestamp: new Date().toISOString(),
-        location: 'Main Sensor'
-    };
-
-    // Update UI immediately (simulating real-time data)
-    updateCurrentReading(fakeIncident);
-    updateChart(fakeIncident);
-
-    // Update last values
-    lastGasLevel = gasLevel;
-    lastStatus = status;
-
-    // Update signal strength
-    signalStrength = 80 + Math.floor(Math.random() * 20);
-    const signalEl = document.getElementById('signalStrength');
-    if (signalEl) {
-        signalEl.textContent = `${signalStrength}%`;
     }
 }
 
@@ -813,20 +723,79 @@ async function fetchRealTimeData() {
         const data = await response.json();
 
         if (data.success && data.data) {
-            // Only update if data is newer than what we have
             const newTimestamp = new Date(data.data.timestamp).getTime();
             const currentTimestamp = lastGasLevel > 0 ? new Date().getTime() : 0;
 
             if (newTimestamp > currentTimestamp || lastGasLevel === 0) {
                 updateCurrentReading(data.data);
                 updateChart(data.data);
-                updateConnectionStatus(true);
                 lastGasLevel = data.data.gas_level;
                 lastStatus = data.data.status;
+
+                // Update system status with latest data
+                updateSystemStatus(true, true, hasMobileData);
             }
         }
     } catch (error) {
         console.error('Error fetching real-time data:', error);
+        updateSystemStatus(false, false, hasMobileData);
+    }
+}
+
+// ===== SYSTEM STATUS INDICATORS (Mobile-First) =====
+function updateSystemStatus(isServerConnected, isDatabaseConnected, hasMobileData) {
+    // Server status
+    const serverDot = document.getElementById('connectionStatus');
+    const serverText = document.getElementById('connectionText');
+    if (serverDot && serverText) {
+        if (isServerConnected) {
+            serverDot.className = 'status-dot online';
+            serverText.textContent = 'Connected';
+            serverText.style.color = '#22C55E';
+        } else {
+            serverDot.className = 'status-dot';
+            serverText.textContent = 'Disconnected';
+            serverText.style.color = '#EF4444';
+        }
+    }
+
+    // Sensor status (based on data availability)
+    const sensorDot = document.getElementById('sensorStatus');
+    const sensorText = document.getElementById('sensorText');
+    if (sensorDot && sensorText) {
+        if (lastGasLevel > 0) {
+            sensorDot.className = 'status-dot online';
+            sensorText.textContent = 'Active';
+            sensorText.style.color = '#22C55E';
+        } else {
+            sensorDot.className = 'status-dot';
+            sensorText.textContent = 'Offline';
+            sensorText.style.color = '#EF4444';
+        }
+    }
+
+    // Mobile status (critical change from Arduino)
+    const mobileStatus = document.getElementById('mobileStatus');
+    if (mobileStatus) {
+        if (hasMobileData) {
+            mobileStatus.textContent = 'Connected';
+            mobileStatus.style.color = '#22C55E';
+        } else {
+            mobileStatus.textContent = 'Awaiting Data';
+            mobileStatus.style.color = '#94A3B8';
+        }
+    }
+
+    // Database status
+    const dbStatus = document.getElementById('dbStatus');
+    if (dbStatus) {
+        if (isDatabaseConnected) {
+            dbStatus.textContent = 'Synced';
+            dbStatus.style.color = '#22C55E';
+        } else {
+            dbStatus.textContent = 'Disconnected';
+            dbStatus.style.color = '#EF4444';
+        }
     }
 }
 
@@ -841,8 +810,6 @@ function updateCurrentReading(data) {
     if (levelEl && statusEl) {
         levelEl.textContent = gasLevel;
         statusEl.textContent = status;
-
-        // Update status styling
         statusEl.className = 'reading-status';
 
         if (gasLevel > 800) {
@@ -917,7 +884,7 @@ function populateTable(incidents) {
     if (incidents.length === 0) {
         tbody.innerHTML = `
       <tr>
-        <td colspan="5" class="text-center py-4">
+        <td colspan="6" class="text-center py-4">
           <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
           <p class="text-muted mt-2">No incidents recorded yet</p>
         </td>
@@ -933,12 +900,16 @@ function populateTable(incidents) {
         const date = new Date(incident.timestamp);
         const formattedTime = date.toLocaleString();
         const statusClass = incident.status === 'ALERT' ? 'ALERT' : 'NORMAL';
+        const sourceBadge = incident.sensor_id?.startsWith('MOBILE_')
+            ? '<span class="badge bg-primary">📱 Mobile</span>'
+            : '<span class="badge bg-secondary">💻 Bluetooth</span>';
 
         row.innerHTML = `
       <td>${incident.id || '-'}</td>
       <td>${formattedTime}</td>
       <td>${incident.gas_level}</td>
       <td><span class="status-badge ${statusClass}">${incident.status}</span></td>
+      <td>${sourceBadge}</td>
       <td>
         <button class="action-btn view" onclick="viewIncident(${incident.id})">
           <i class="fas fa-eye"></i> View
@@ -1022,33 +993,6 @@ function updateStatistics(stats) {
     }
 }
 
-function updateConnectionStatus(isConnected) {
-    const statusDot = document.getElementById('connectionStatus');
-    const statusText = document.getElementById('connectionText');
-    const sensorDot = document.getElementById('sensorStatus');
-    const sensorText = document.getElementById('sensorText');
-
-    if (statusDot && statusText && sensorDot && sensorText) {
-        if (isConnected) {
-            statusDot.className = 'status-dot online';
-            statusText.textContent = 'Connected';
-            statusText.style.color = '#22C55E';
-
-            sensorDot.className = 'status-dot online';
-            sensorText.textContent = 'Active';
-            sensorText.style.color = '#22C55E';
-        } else {
-            statusDot.className = 'status-dot';
-            statusText.textContent = 'Disconnected';
-            statusText.style.color = '#EF4444';
-
-            sensorDot.className = 'status-dot';
-            sensorText.textContent = 'Offline';
-            sensorText.style.color = '#EF4444';
-        }
-    }
-}
-
 function showAlertBanner(gasLevel) {
     const banner = document.getElementById('alertBanner');
     if (!banner) return;
@@ -1056,17 +1000,13 @@ function showAlertBanner(gasLevel) {
     document.getElementById('alertLevel').textContent = gasLevel;
     banner.style.display = 'block';
 
-    // Auto-hide after 10 seconds (longer than notification for critical alerts)
-    setTimeout(() => {
-        closeAlert();
-    }, 10000);
+    // Auto-hide after 10 seconds
+    setTimeout(() => closeAlert(), 10000);
 }
 
 function closeAlert() {
     const banner = document.getElementById('alertBanner');
-    if (banner) {
-        banner.style.display = 'none';
-    }
+    if (banner) banner.style.display = 'none';
 }
 
 function showToastMessage(message) {
@@ -1074,9 +1014,7 @@ function showToastMessage(message) {
     const toastMessage = document.getElementById('themeToastMessage');
     if (toastMessage && toastEl) {
         toastMessage.textContent = message;
-        const toast = new bootstrap.Toast(toastEl, {
-            delay: 4000 // ✅ 4-second auto-dismiss for toast too
-        });
+        const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
         toast.show();
     }
 }
@@ -1084,7 +1022,7 @@ function showToastMessage(message) {
 // ===== ACTIONS =====
 function refreshAllData() {
     if (typeof Notiflix !== 'undefined') {
-        Notiflix.Notify.info('Refreshing all data...'); // ✅ Auto-dismisses after 4s
+        Notiflix.Notify.info('Refreshing all data...');
     }
 
     Promise.all([
@@ -1095,11 +1033,11 @@ function refreshAllData() {
         loadDailyStats()
     ]).then(() => {
         if (typeof Notiflix !== 'undefined') {
-            Notiflix.Notify.success('All data refreshed successfully!'); // ✅ Auto-dismisses after 4s
+            Notiflix.Notify.success('All data refreshed successfully!');
         }
     }).catch((error) => {
         if (typeof Notiflix !== 'undefined') {
-            Notiflix.Notify.failure('Error refreshing data'); // ✅ Auto-dismisses after 4s
+            Notiflix.Notify.failure('Error refreshing data');
         }
     });
 }
