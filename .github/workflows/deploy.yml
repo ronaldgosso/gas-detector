@@ -1,4 +1,4 @@
-name: Deploy Public Folder to Pages
+name: Deploy to Pages
 
 on:
   # Runs on pushes targeting the default branch
@@ -35,8 +35,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Uploads the 'public' folder
-          path: './public'
+          path: './'
 
       - name: Deploy to GitHub Pages
         id: deployment
