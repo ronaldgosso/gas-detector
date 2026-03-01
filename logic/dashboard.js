@@ -4,7 +4,7 @@
 // ==========================================
 
 // Configuration
-const API_BASE_URL = 'https://gas-detector-api.vercel.app/'; // ✅ Production URL
+const API_BASE_URL = 'https://gas-detector-api.vercel.app'; // ✅ Production URL
 let currentPage = 1;
 let itemsPerPage = 10;
 let autoRefreshInterval = 2000; // 2 seconds
