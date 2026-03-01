@@ -241,7 +241,7 @@ async function loadDataAndInitialize() {
         startAutoRefresh();
 
         // Check Bluetooth connection
-        checkBluetoothStatus();
+        // checkBluetoothStatus();
 
     } catch (error) {
         console.error('Error loading initial data:', error);
@@ -717,7 +717,7 @@ function startAutoRefresh() {
                 fetchRealTimeData();
                 loadIncidents();
                 loadStatistics();
-                checkBluetoothStatus();
+                // checkBluetoothStatus();
             }
         }, autoRefreshInterval);
     }
